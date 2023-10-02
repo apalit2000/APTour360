@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+        <title>Hospital 360</title>
+
+        <!-- Babylon.js -->
+        <script src="https://code.jquery.com/pep/0.4.2/pep.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.2/dat.gui.min.js"></script>
+        <script src="https://preview.babylonjs.com/ammo.js"></script>
+        <script src="https://preview.babylonjs.com/cannon.js"></script>
+        <script src="https://preview.babylonjs.com/Oimo.js"></script>
+        <script src="https://preview.babylonjs.com/libktx.js"></script>
+        <script src="https://preview.babylonjs.com/earcut.min.js"></script>
+        <script src="https://preview.babylonjs.com/babylon.js"></script>
+        <script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+        <script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+        <script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+        <script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+        <script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.js"></script>
+        <script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
+        <script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            #renderCanvas {
+                width: 100%;
+                height: 100%;
+                touch-action: none;
+            }
+        </style>
+    </head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    <script>
+	    var myRoomTextureMap = new Map();
+            myRoomTextureMap.set("skyBox1",["textures/102824418_l.jpg",0,-135,0]);            
+	    // Skybox 2
+	    myRoomTextureMap.set("skyBox2",["textures/102831187_l.jpg",110,-135,0]);
+	    // Skybox 3
+	    myRoomTextureMap.set("skyBox3",["textures/102831188_l.jpg",220,-135,0]);
+	    // Skybox 4
+	    myRoomTextureMap.set("skyBox4",["textures/102824419_l.jpg",340,-135,0]);
+	    // Skybox 5
+	    myRoomTextureMap.set("skyBox5",["textures/102831199_l.jpg",460,-135,0]);
+	    // Skybox 5A
+	    myRoomTextureMap.set("skyBox5A",["textures/DocPregChember.jpg",580,-135,0]);
+	    // Skybox 5B
+	    myRoomTextureMap.set("skyBox5B",["textures/102831190_l.jpg",700,-135,0]);
+	    // Skybox 5C
+	    myRoomTextureMap.set("skyBox5C",["textures/102831206_l.jpg",820,-135,0]);
+	    // Skybox 5D
+	    myRoomTextureMap.set("skyBox5D",["textures/102831216_l.jpg",940,-135,0]);
+	    // Skybox 5E
+	    myRoomTextureMap.set("skyBox5E",["textures/102824467_l.jpg",1060,-135,0]);
+	    // Skybox 5F
+	    myRoomTextureMap.set("skyBox5F",["textures/102831268_l.jpg",1180,-135,0]);
+	    // Skybox 5G
+	    myRoomTextureMap.set("skyBox5G",["textures/102831191_l.jpg",1300,-135,0]);
+	    //Skybox 5H
+	    myRoomTextureMap.set("skyBox5H",["textures/102831218_l.jpg",1420,-135,0]);
+	    // Skybox 5I
+	    myRoomTextureMap.set("skyBox5I",["textures/102824470_l.jpg",1540,-135,0]);
+	    // Skybox 6- 102831217_l.jpg
+	    myRoomTextureMap.set("skyBox6",["textures/semi-delux.jpg",1660,-135,0]);
+	    // Skybox 7- 102831270_l.jpg
+	    myRoomTextureMap.set("skyBox7",["textures/102831270_l.jpg",1780,-135,0]);
+	    // Skybox 8- 102831269_l.jpg
+	    myRoomTextureMap.set("skyBox8",["textures/102831269_l.jpg",1900,-135,0]);	
+	    //102831193_l.jpg
+	//102824752_l.jpg
+	//102831267_l.jpg(download due)
+
+
+	
+	
+	
+	
+	//
+	var myRoomMap = new Map();
+        myRoomMap.set('basement', ['skyBox2', 'skyBox3']);
+        myRoomMap.set('stair1', ['skyBox3', 'skyBox4']);
+        myRoomMap.set('stair2', ['skyBox4', 'skyBox5']);
+ 	myRoomMap.set('firstfloor', ['skyBox5', 'skyBox5A']);
+ 	myRoomMap.set('PregChember', ['skyBox5A', 'skyBox5B']);
+ 	myRoomMap.set('coridor', ['skyBox5B', 'skyBox5C']);
+	myRoomMap.set('coridorA', ['skyBox5B', 'skyBox5C']);
+	myRoomMap.set('Consultency', ['skyBox5D', 'skyBox5E']);
+	myRoomMap.set('coridor1', ['skyBox5E', 'skyBox5F']);
+	myRoomMap.set('coridor2', ['skyBox5F', 'skyBox5G']);
+	myRoomMap.set('coridor3', ['skyBox5H', 'skyBox5I']);
+	myRoomMap.set('coridor4', ['skyBox5I', 'skyBox6']);
+	myRoomMap.set('coridor5', ['skyBox6', 'skyBox7']);
+	myRoomMap.set('coridor6', ['skyBox7', 'skyBox8']);
+        //console.log(myRoomMap.has('skyBox1'));
+        //console.log(myRoomMap.get('skyBox1'));
+
+	var myRoomLoaded = new Map();
+
+
+        var canvas = document.getElementById("renderCanvas");
+
+        var engine = null;
+        var scene = null;
+        var sceneToRender = null;
+        var createDefaultEngine = function() { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true }); };
+        var createScene = function () {
+        
+            // This creates a basic Babylon Scene object (non-mesh)
+            var scene = new BABYLON.Scene(engine);
+            scene.useRightHandedSystem = true
+            // This creates and positions a free camera (non-mesh)
+            var camera = new BABYLON.ArcRotateCamera("camera1",Math.PI, Math.PI / 2.0, 20, new BABYLON.Vector3(0, 0, 0), scene);
+        
+            camera.angularSensibilityX = -camera.angularSensibilityX;
+            camera.angularSensibilityY = -camera.angularSensibilityY;
+            camera.lowerRadiusLimit = 5;
+            camera.upperRadiusLimit = 20;
+            console.log(camera.upperRadiusLimit);
+            // This targets the camera to scene origin
+            camera.setTarget(new BABYLON.Vector3(0,-135,0));
+        
+            // This attaches the camera to the canvas
+            camera.attachControl(canvas, true);
+        
+            // This creates a light, aiming 0,1,0 - to the sky (non-mesh)
+            var light = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(0, 1, 0), scene);
+        
+            // Default intensity is 1. Let's dim the light a small amount
+            light.intensity = 0.1;
+            
+	    //linkTarget(name,torusPosition, cameraNewPosition, cameraSetTargetPosition, cameraAlpha,cameraBeta,scene,camera)
+            //step 1
+	    linkTarget("basement",[-20, -150, -40], [110, -135, 0],[110, -135, 0], 0,12, scene,camera);
+	    //step 2
+	    linkTarget("stair1",[110, -150, -40], [220, -135, 0],[220, -135, 0],6,0, scene,camera);
+	    //step 3
+	    linkTarget("stair2",[220+30, -150, 15], [340, -135, 0],[340, -135, 0],0,0, scene,camera);
+	    //step 4
+	    linkTarget("firstfloor",[340, -150, 40], [460, -135, 0],[460, -135, 0],0,0, scene,camera);
+	    //step 5
+	    linkTarget("PregChember",[45+460, -160, 15], [580, -135, 0],[580, -135, 0],0,0, scene,camera);
+	    //back step 4
+	    linkTarget("firstfloor-back",[45+560, -150, 15], [460, -135, 0],[460, -135, 0],0,0, scene,camera);
+	    //step 6
+	    linkTarget("coridor",[460+15, -150, 40], [700, -135, 0],[700, -135, 0],0,0, scene,camera);
+	    //step 7
+	    linkTarget("coridorA",[700-20, -150, -40], [820, -135, 0],[820, -135, 0],0,0, scene,camera);
+	    //step 8
+	    linkTarget("Consultency",[820-20, -150, -20], [940, -135, 0],[940, -135, 0],0,0, scene,camera);
+ 	    //back step 7
+	    linkTarget("coridor1",[940-40, -155, -20], [820, -135, 0],[820, -135, 0],0,0, scene,camera);
+	    //step 9
+	    linkTarget("coridor2",[820+20, -150, -10], [1060, -135, 0],[1060, -135, 0],0,0, scene,camera);
+ 	    //step 10
+	    linkTarget("coridor3",[1060+20, -150, -10], [1180, -135, 0],[1180, -135, 0],0,0, scene,camera);
+	    //step 11
+	    linkTarget("coridor4",[1180+20, -150, -10], [1300, -135, 0],[1300, -135, 0],0,0, scene,camera);
+	    //step 12
+	    linkTarget("coridor5",[1300+20, -150, -10], [1420, -135, 0],[1420, -135, 0],0,0, scene,camera);
+	    //step 13
+	    linkTarget("coridor6",[1420+20, -150, -10], [1540, -135, 0],[1540, -135, 0],0,0, scene,camera);
+	    //step 14
+	    linkTarget("room",[1540+20, -150, -10], [1660, -135, 0],[1660, -135, 0],0,0, scene,camera);
+	    //step 14- back
+	    linkTarget("room-coridor6",[1660+20, -150, -10], [1540, -135, 0],[1540, -135, 0],0,0, scene,camera);
+	    //step 15
+	    linkTarget("room",[1540+20, -150, 10], [1780, -135, 0],[1780, -135, 0],0,0, scene,camera);
+	    //step 15
+	    linkTarget("junction",[1780+20, -150, 10], [1900, -135, 0],[1900, -135, 0],0,0, scene,camera);
+	
+	//------------------------------------------old start   
+	   /* //step 1
+	    linkTarget("torus1",[-20, -15.5, -40], [110, 0, 0],[110, 0, 0], 3,0, scene,camera);
+	    //step 2
+	    linkTarget("torus2",[-15+110, -15.5, -40], [220, 0, 0],[220, 0, 0],6,0, scene,camera);
+	    //step 3
+	    linkTarget("torus3",[-15+220, -15.5, -40], [340, 0, 0],[340, 0, 0],0,0, scene,camera);
+	    //step 4
+	    linkTarget("torus4",[-15+340, -15.5, -40], [460, 0, 0],[460, 0, 0],0,0, scene,camera);
+	    //step 5
+	    linkTarget("torus5",[-15+460, -15.5, -40], [580, 0, 0],[580, 0, 0],0,0, scene,camera);
+	    //back step  2
+	    linkTarget("torus2-back",[220+15, -15.5, 40], [110, 0, 0],[110, 0, 0],6,0, scene,camera);
+	    //back step 1
+	    linkTarget("torus1-back",[110-20, -15.5, 40], [0, 0, 0],[0, 0, 0],3,0, scene,camera);
+	   */
+	  //--------------------------------old end---- 
+
+
+	    // Skybox 1
+            loadSkyBox("skyBox1","textures/102824418_l.jpg",0,-135,0);            
+	    // Skybox 2
+	    loadSkyBox("skyBox2","textures/102831187_l.jpg",110,-135,0);
+	    
+
+            /*// Skybox 6
+            loadSkyBox("skyBox6","textures/Entry.jpg",0,0,0);            
+	    // Skybox 7
+	    loadSkyBox("skyBox7","textures/Inspection.jpg",110,0,0);
+	    // Skybox 8
+	    loadSkyBox("skyBox8","textures/waiting.jpg",220,0,0);
+	    // Skybox 9
+	    loadSkyBox("skyBox9","textures/119961411_l.jpg",340,0,0);
+	    // Skybox 10
+	    loadSkyBox("skyBox10","textures/119961407_l.jpg",460,0,0);
+	    // Skybox 11
+	    loadSkyBox("skyBox11","textures/119961410_l.jpg",580,0,0);
+            */
+        
+            // Reset arrow-key shortcuts && Add support for WASD
+            camera.keysLeft=[39]; // moves camera left
+            camera.keysUp = [40]; // moves camera up
+            camera.keysRight = [37]; // moves camera right
+            camera.keysDown = [38]; // moves camera down
+        
+            // Plus- and minus- key zooming
+            var map = {};
+            //var zoomLevel = 1;
+            scene.actionManager = new BABYLON.ActionManager(scene);
+            scene.registerAfterRender(() =>{
+                camera.fov = camera.radius * 1/20;
+            });
+        
+            scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyDownTrigger, function(evt){
+                map[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+                var key = evt.sourceEvent.key;
+                if(key === "-" || key === "_"){
+                    camera.radius += 5;
+                }
+                if(key === "+" || key === "="){
+                    camera.radius -= 5;
+                }
+            }));
+        
+            scene.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnKeyUpTrigger, function (evt) {								
+                map[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+            }));
+        
+            scene.registerBeforeRender(function() {
+                // rotation per click
+                if(map["a"] || map["A"]){
+                    //left
+                    camera.alpha -= Math.PI/24;
+                    console.log(camera.alpha);
+                };
+                if(map["d"] || map["D"]){
+                    //right
+                    camera.alpha += Math.PI/24;
+                    console.log(camera.alpha);
+                }
+                if(map["w"] || map["W"]){
+                    //up
+                    camera.beta += Math.PI/24;
+                    console.log(camera.alpha);
+                }
+                if(map["s"] || map["S"]){
+                    //down
+                    camera.beta -= Math.PI/24;
+                    console.log(camera.alpha);
+                }
+                
+            });
+	    createToolBox(camera);
+            return scene;
+        
+        };
+	
+	var loadSkyBox= function(name,texture, x,y,z){		
+	    var skybox = BABYLON.Mesh.CreateBox(name, 100.0, scene);
+            var skyboxMaterial = new BABYLON.StandardMaterial(name, scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.reflectionTexture = new BABYLON.Texture(texture, scene, true);
+
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.FIXED_EQUIRECTANGULAR_MODE;
+            skyboxMaterial.disableLighting = true;
+            skybox.material = skyboxMaterial;
+	    skybox.position = new BABYLON.Vector3(x, y, z);
+	}
+	var linkTarget =function(name,torusPosition, cameraNewPosition, cameraSetTargetPosition, cameraAlpha,cameraBeta,scene,camera){
+	    console.log("torus : "+torusPosition[0]+","+torusPosition[1]+torusPosition[2]);
+	    console.log("cameraNewPosition : "+cameraNewPosition[0]+","+cameraNewPosition[1]+cameraNewPosition[2]);
+	    console.log("cameraSetTargetPosition : "+cameraSetTargetPosition[0]+","+cameraSetTargetPosition[1]+cameraSetTargetPosition[2]);
+	    console.log("camera.alpha : "+cameraAlpha);
+	    var torus = BABYLON.Mesh.CreateTorus(name, 5, 1, 30, scene, false, BABYLON.Mesh.DEFAULTSIDE);
+	    torus.position=new BABYLON.Vector3(torusPosition[0],torusPosition[1],torusPosition[2]);
+            //rotation in drg
+	    //torus.rotation.x=-15;
+	    torus.actionManager = new BABYLON.ActionManager(scene);
+	    torus.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function(evt){
+		camera.setPosition(new BABYLON.Vector3(cameraNewPosition[0],cameraNewPosition[1],cameraNewPosition[2]));
+		// This targets the camera to scene origin
+            	camera.setTarget(new BABYLON.Vector3(cameraSetTargetPosition[0],cameraSetTargetPosition[1],cameraSetTargetPosition[2]));
+		camera.radius=camera.upperRadiusLimit;
+		camera.alpha += (Math.PI/24)*cameraAlpha;
+		camera.beta += (Math.PI/24)*cameraBeta;
+	   	}));
+	    torus.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, function(evt){
+		console.log(torus.name);
+		if(myRoomMap.has(torus.name)){
+		   var rooms= myRoomMap.get(torus.name);
+		   console.log(rooms);
+		   if(!myRoomLoaded.get(rooms[0])){
+			var skyboxAttr= myRoomTextureMap.get(rooms[0])
+			loadSkyBox(rooms[0],skyboxAttr[0],skyboxAttr[1],skyboxAttr[2],skyboxAttr[3]);
+			myRoomLoaded.set(rooms[0],"sucess");
+		      }
+		   if(!myRoomLoaded.get(rooms[1])){
+			var skyboxAttr= myRoomTextureMap.get(rooms[1])
+			loadSkyBox(rooms[1],skyboxAttr[0],skyboxAttr[1],skyboxAttr[2],skyboxAttr[3]);
+			myRoomLoaded.set(rooms[1],"sucess");
+		      }
+		}
+	    }));
+	   }
+
+	  //Default tool box
+	   var createToolBox= function(camera){	
+	   var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
+	   var setView = function(but) {
+	   console.log(but);
+		if(but === 0){console.log("360 view");
+			camera.lowerBetaLimit = 0;
+			camera.upperBetaLimit = 3.14159;
+		}
+		else{
+			camera.lowerBetaLimit = 0.698132; // 40 degrees
+    			camera.upperBetaLimit = 1.5777;   // 90 degrees
+		}
+	   }
+	
+	//Add View Selection Panel 
+	var viewGroup = new BABYLON.GUI.RadioGroup("View");
+	viewGroup.addRadio("360 View", setView, true);
+    	viewGroup.addRadio("Panorama", setView);
+
+	//var rotateGroup = new BABYLON.GUI.SliderGroup("Zoom", "S");
+	//rotateGroup.addSlider("Zoom", orientateY, "degs", camera.lowerRadiusLimit, 2 * Math.PI, 0, displayValue)
+
+	var selectBox = new BABYLON.GUI.SelectionPanel("sp", [viewGroup]);
+    	selectBox.width = 0.10;
+    	selectBox.height = 0.20;
+    	selectBox.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+    	selectBox.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_BOTTOM;
+     
+    	advancedTexture.addControl(selectBox);
+        }
+	var engine;
+	try {
+	    engine = createDefaultEngine();
+	} catch(e) {
+	    console.log("the available createEngine function failed. Creating the default engine instead");
+	    engine = createDefaultEngine();
+	}
+        if (!engine) throw 'engine should not be null.';
+        scene = createScene();;
+        sceneToRender = scene
+
+        engine.runRenderLoop(function () {
+            if (sceneToRender) {
+                sceneToRender.render();
+            }
+        });
+
+        // Resize
+        window.addEventListener("resize", function () {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
